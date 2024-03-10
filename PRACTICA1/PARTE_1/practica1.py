@@ -1,3 +1,10 @@
+'''
+Adalberto Cabrera Vazquez 
+No. boleta: 2023640791
+Práctica 1
+
+'''
+
 import numpy as np   #Libreria numpty
 import os              #Libreria paralimpiar la pantalla
 import statistics as st     #Libreria para realizar la desviacion estandar
