@@ -1,8 +1,8 @@
 '''
-Cabrera Vazquez Adalberto
-No. boleta: 2023640791
-Practica 2
-06/03/2024
+    Cabrera Vazquez Adalberto
+    No. boleta: 2023640791
+    Practica 2
+    06/03/2024
 '''
 
 import numpy as np
