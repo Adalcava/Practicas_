@@ -1,13 +1,15 @@
-from abc import ABC, abstractmethod
+class Alumno:
+    def __init__(self, nombre: str, boleta: str, edad: int) -> None:
+        self.nombre = nombre
+        self.boleta = boleta
+        self.edad = edad
+    
+    def habla(self, msj):
+        print(f"Me llamo {self.nombre} y digo {msj}")
+        
+    def __str__(self) -> str:
+        return f"Hola, me llamo {self.nombre} mi boleta es {self.boleta} y tengo {self.edad} años."
 
-class MiClaseAbstracta(ABC):
-    @abstractmethod
-    def metodo_abstracto(self):
-        pass
-
-class MiClaseConcreta(MiClaseAbstracta):
-    def metodo_abstracto(self):
-        print("Implementación del método abstracto")
-
-print(issubclass(MiClaseAbstracta, ABC))  # True
-print(issubclass(MiClaseConcreta, ABC))   # True
+pavel = Alumno('Pavel', edad=19, boleta='72635476723654')
+pavel.habla("Hola")
+print(pavel)

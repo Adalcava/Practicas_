@@ -23,7 +23,7 @@ class Computadora(metaclass=ABCMeta):
     @property
     def memoria(self):
         return self.__memoria
-        
+    
     @memoria.setter
     def memoria(self, nuevamemoria:str):
         self.__memoria= nuevamemoria
