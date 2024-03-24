@@ -10,7 +10,7 @@ import os
 from tabulate import tabulate
 
 os.system('cls')
-
+#Clase abstracta computasdora
 class Computadora(metaclass=ABCMeta):
     @abstractmethod
     def __init__(self, memoria:str, procesador: str, almacenamiento:str, gpu:str) -> None:
@@ -54,7 +54,7 @@ class Computadora(metaclass=ABCMeta):
             
     def presentar(self):
        print(f', su memoria es de {self.__memoria} GB, su procesador es un {self.__procesador}, tiene un almacenamiento de {self.__almacenamiento}, y una gpu {self.__gpu}.')
-        
+#Sub clase portatil
 class ComputadoraPortatil(Computadora):
     def __init__(self, memoria, procesador,almacenamiento, gpu, marca:str) -> None:
         super().__init__(memoria, procesador, almacenamiento, gpu)
@@ -63,7 +63,7 @@ class ComputadoraPortatil(Computadora):
         
     def __str__(self)->str:
         return f'Hola la computadora portatil es de la marca {self.__marca}'
-
+#sub clase escritorio
 class ComputadoraEscritorio(Computadora):
     def __init__(self, memoria, procesador, almacenamiento, gpu, tamaño:str) ->None:
         super().__init__(memoria, procesador, almacenamiento, gpu)
@@ -71,7 +71,7 @@ class ComputadoraEscritorio(Computadora):
         
     def __str__(self)-> str:
         return f'Hola la computadora de escritorio tiene un tamaño de {self.__tamaño} cms cúbicos'
-    
+#sub clase telefono
 class TelefonoInteligente(Computadora):
     def __init__(self, memoria, procesador, almacenaminto, gpu, numero:str) ->None:
         super().__init__(memoria, procesador, almacenaminto, gpu)
@@ -79,7 +79,7 @@ class TelefonoInteligente(Computadora):
     
     def __str__(self)-> str:
         return f'Hola el numero del telefono inteligente es {self.__numero}'
-
+#sub clase tablet
 class Tablet(Computadora):
     def __init__(self,memoria, procesador, almacenamiento, gpu, peso:str) ->None:
         super().__init__(memoria,procesador, almacenamiento, gpu)
@@ -87,7 +87,7 @@ class Tablet(Computadora):
     
     def __str__(self)->str:
          return f'Hola el peso es de {self.__peso} gr'
-            
+#ingreso de datos a los objetos   
 portatil_1=ComputadoraPortatil('16', 'Intel® Celeron® G','1T', 'Zotac(20)','Samsung')
 portatil_2=ComputadoraPortatil('8', 'AMD Ryzen™ 9', '256 Gb', 'SAPPHIRE(11)', 'Apple')
 portatil_3=ComputadoraPortatil('4', 'Intel® Core™ i5-10xxx', '512 Gb', 'ASRock(9)','LENOVO')
@@ -103,7 +103,7 @@ telefono_3=TelefonoInteligente('8' ,'Samsung Exynos 2200', '64 Gb', 'Mali-G615 M
 tablet_1=Tablet('32',' 1.5GHz	Dual-Core Cortex-A9, 1.6GHz', '512 Gb','ARM Mali-T764','500')
 tablet_2=Tablet('16','Octa-Core Cortex-A7, 1.6GHz','256 Gb','ARM Mali-450MP6', '460')
 tablet_3=Tablet('8','Quad-Core 64Bit Cortex-A53, 2.0GHz','256 Gb','Mali400MP2', '520')
-
+#imprimirlos
 print('Portatil 1:\n'+ str(portatil_1), end='')
 portatil_1.presentar()
 print('\nPortatil 2:\n'+ str(portatil_2), end="")
