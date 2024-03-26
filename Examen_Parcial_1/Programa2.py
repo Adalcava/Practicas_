@@ -5,19 +5,19 @@ Examen 1
 '''
 
 import clases as cd
-
+# hago a las personas
 persona_1=cd.Contacto('Adalberto', '9984037473')
 persona_2=cd.Contacto('Emilio', '5598472265')
 persona_3=cd.Contacto('Itzel', '9981007887')
-
+#los meto a la agenda
 agenda = cd.Agenda()
 agenda.agregarcontacto(persona_1)
 agenda.agregarcontacto(persona_2)
 agenda.agregarcontacto(persona_3)
 
 input('Presiona cualquier tecla para continuar')
-
-print("Lista de Peliculas:\n")
+#muestro la agenda
+print("Lista de Personas:\n")
 agenda.mostrarcontacto()
 
 #Borrar un contacto de la persona 1
