@@ -1,9 +1,15 @@
+'''
+Adalberto Cabrera Vazquez   
+No. boleta: 2023640791
+Practica 4: Interfaces de usuario, controles basicos.
+Fecha de entrega: 29 de Marzo 2024'''
+
 from PyQt6.QtGui import QKeyEvent
 from Ui_calculadora import *
 from PyQt6.QtWidgets import QMainWindow
 from PyQt6 import QtCore
 import sys
-
+# Clase que hereda de las qeu nos creo Qt Designer
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, *parent, **flags) -> None:
         super().__init__(*parent, **flags)
@@ -38,11 +44,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.setNumber(key.key()-QtCore.Qt.Key.Key_0)
         elif key.key() == QtCore.Qt.Key.Key_Period:
             self.setPunto()
-
-        
+   #Boton AC
     def setCero(self):
-        self.etiqueta.setText("")
-        
+        self.etiqueta.setText("")      
+ #Boton menos
     def setMenos(self):
         cadena = self.etiqueta.text()
         if cadena.find('+')!=-1 or cadena.find('-')!=-1 or cadena.find('*')!=-1  or cadena.find('%')!=-1 or cadena.find('(+/-)')!=-1:
@@ -50,7 +55,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             cadena = cadena + "-"
             self.etiqueta.setText(cadena) 
-            
+ #Boton mas
     def setMas(self):
         cadena = self.etiqueta.text()
         if cadena.find('+')!=-1 or cadena.find('-')!=-1 or cadena.find('*')!=-1 or cadena.find('/')!=-1 or cadena.find('%')!=-1 or cadena.find('(+/-)')!=-1:
@@ -58,7 +63,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             cadena = cadena + "+"
             self.etiqueta.setText(cadena) 
-            
+#boton multiplicacion  
     def setMultiplicacion(self):
         cadena = self.etiqueta.text()
         if cadena.find('+')!=-1 or cadena.find('-')!=-1 or cadena.find('*')!=-1 or cadena.find('/')!=-1 or cadena.find('%')!=-1 or cadena.find('(+/-)')!=-1:
@@ -66,7 +71,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             cadena = cadena + "*"
             self.etiqueta.setText(cadena) 
-    
+#boton division
     def setDivision(self):
         cadena = self.etiqueta.text()
         if cadena.find('+')!=-1 or cadena.find('-')!=-1 or cadena.find('*')!=-1 or cadena.find('/')!=-1 or cadena.find('%')!=-1 or cadena.find('(+/-)')!=-1:
@@ -74,7 +79,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             cadena = cadena + "/"
             self.etiqueta.setText(cadena) 
-    
+#Boton porcentaje
     def setPorcentaje(self):
         cadena = self.etiqueta.text()
         if cadena.find('+')!=-1 or cadena.find('-')!=-1 or cadena.find('*')!=-1 or cadena.find('/')!=-1 or cadena.find('%')!=-1 or cadena.find('(+/-)')!=-1:
@@ -82,7 +87,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             cadena = cadena + "% "
             self.etiqueta.setText(cadena) 
-            
+#boton inversa     
     def setInv(self):
         cadena=self.etiqueta.text()
         if cadena.find('*')!=-1 or cadena.find('/')!=-1 or cadena.find('%')!=-1 or cadena.find('(+/-)')!=-1:
@@ -90,7 +95,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             cadena=cadena+' (inv)'
             self.etiqueta.setText(cadena) 
-        
+#boton punto
     def setPunto(self):
         cadena = self.etiqueta.text()
         
@@ -143,7 +148,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             
         self.etiqueta.setText(cadena)
         print(cadena)
-    
+#boton para poner numeros
     def setNumero(self):
         cadena = self.etiqueta.text() + self.sender().text()
         '''flotante = float(cadena)
@@ -155,7 +160,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             
         self.etiqueta.setText(cadena)
         print(cadena)
-    
+#boton para el igual
     def setIgual(self):
         cadena=self.etiqueta.text()
         
