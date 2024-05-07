@@ -90,6 +90,7 @@ import csv
 import os
 import subprocess
 import inspect
+import threading
 
 # Definición de pines
 BUZZER = 12
@@ -127,7 +128,7 @@ class SimonDice(QtWidgets.QMainWindow, Ui_MainWindow):
         self.pausado = False  # Estado de pausa del juego
         self.init_board()  # Inicializar placa Arduino y servo
 
-        self.Volver.clicked.connect(self.regresar)
+        self.Volver.clicked.connect(self.Regresa)
         self.Salir.clicked.connect(self.close)
         self.Reiniciar.clicked.connect(self.reiniciar_juego)
         self.PausaContinua.clicked.connect(self.pausar_continuar_juego)
@@ -211,6 +212,11 @@ class SimonDice(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.actualizar_puntajes()
                 self.nivel += 1
 
+    def hilo():
+        hilos = threading.Thread(target=SimonDice.iniciar_juego)
+        hilos.start()
+        
+    
     def mostrar_mensaje_eliminar(self):
         for i, jugador in enumerate(self.jugadores, start=1):
             getattr(self, f"mensaje{i}").setText("eliminado")
@@ -263,5 +269,5 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     window = SimonDice()
     window.show()
-    window.iniciar_juego()  # Iniciar el juego automáticamente al abrir la ventana
+    window.hilo()  # Iniciar el juego automáticamente al abrir la ventana
     sys.exit(app.exec())
