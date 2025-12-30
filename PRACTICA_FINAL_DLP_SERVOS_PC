@@ -1,0 +1,253 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+
+entity SERVO_MEMORIA_2SERVOS is
+    Port (
+        CLK       : in  STD_LOGIC;
+        RST       : in  STD_LOGIC;
+        RX        : in  STD_LOGIC; -- Pin RX
+        MODE      : in  STD_LOGIC;
+        SEL_SERVO : in  STD_LOGIC;
+
+        UP     : in  STD_LOGIC;
+        DN     : in  STD_LOGIC;
+        RIGHT  : in  STD_LOGIC;
+        CENTER : in  STD_LOGIC;
+
+        PWM1_OUT : out STD_LOGIC;
+        PWM2_OUT : out STD_LOGIC;
+
+        ANO : out STD_LOGIC_VECTOR(7 downto 0);
+        SEG : out STD_LOGIC_VECTOR(7 downto 0)
+    );
+end SERVO_MEMORIA_2SERVOS;
+
+architecture Behavioral of SERVO_MEMORIA_2SERVOS is
+
+    constant PWM_PERIOD : integer := 1_000_000;
+    constant WAIT_1S    : integer := 50_000_000;
+    constant DEB_MAX    : integer := 50_000;
+    constant BIT_TIME   : integer := 5208; -- 9600 baudios
+
+    type mem_array is array (0 to 4) of integer range 0 to 99;
+    signal mem1, mem2 : mem_array := (others => 0);
+    
+    signal reg_sel    : integer range 0 to 4 := 0;
+    signal digit_sel  : std_logic := '0';
+
+    signal pwm_cnt : integer range 0 to PWM_PERIOD := 0;
+    signal pw1, pw2 : integer := 50_000;
+    signal exec_cnt : integer := 0;
+
+    signal refresh : unsigned(15 downto 0) := (others => '0');
+    signal digit   : unsigned(2 downto 0)  := (others => '0');
+
+    signal cu, cd, cr, cc : integer range 0 to DEB_MAX := 0;
+    signal udb, ddb, rdb, cdb : std_logic := '0';
+    signal up_p, dn_p, r_p, c_p : std_logic := '0';
+    
+    -- Señales UART
+    signal uart_cnt : integer range 0 to BIT_TIME := 0;
+    signal uart_state : integer range 0 to 9 := 0;
+    signal rx_buffer : std_logic_vector(7 downto 0) := (others => '0');
+    
+    signal pc_up, pc_dn, pc_right, pc_center, pc_rst : std_logic := '0';
+    
+    -- Variables virtuales (Solo controladas por UART ahora)
+    signal virt_mode : std_logic := '0';
+    signal virt_sel  : std_logic := '0';
+
+    signal final_rst : std_logic;
+    signal final_up, final_dn, final_right, final_center : std_logic;
+    signal final_mode, final_sel : std_logic;
+
+    function bin7(b : integer range 0 to 11) return STD_LOGIC_VECTOR is
+    begin
+        case b is
+            when 0 => return "11000000"; when 1 => return "11111001";
+            when 2 => return "10100100"; when 3 => return "10110000";
+            when 4 => return "10011001"; when 5 => return "10010010";
+            when 6 => return "10000010"; when 7 => return "11111000";
+            when 8 => return "10000000"; when 9 => return "10010000";
+            when 10 => return "01111001"; when 11 => return "00100100";
+            when others => return "11111111";
+        end case;
+    end function;
+
+    function get_tens(v : integer) return integer is
+    begin if v >= 10 then return v / 10; else return 0; end if; end function;
+
+    function get_units(v : integer) return integer is
+    begin return v mod 10; end function;
+
+begin
+
+    -- ========================================================
+    -- PROCESO UART (CORREGIDO: AQUÍ MANEJAMOS EL RESET DE virt_mode)
+    -- ========================================================
+    process(CLK)
+    begin
+        if rising_edge(CLK) then
+            -- Pulsos por defecto en 0
+            pc_up <= '0'; pc_dn <= '0'; pc_right <= '0'; 
+            pc_center <= '0'; pc_rst <= '0';
+
+            -- CAMBIO 1: El reset de las variables virtuales se hace AQUÍ
+            -- porque este proceso es el "dueño" de esas señales.
+            if RST = '1' then
+                virt_mode <= '0';
+                virt_sel  <= '0';
+                uart_state <= 0;
+                uart_cnt <= 0;
+            else
+                -- Máquina de estados UART Normal
+                case uart_state is
+                    when 0 => 
+                        if RX = '0' then 
+                            uart_state <= 1; uart_cnt <= 0; 
+                        end if;
+                    when 1 to 8 => 
+                        if uart_cnt < BIT_TIME then uart_cnt <= uart_cnt + 1;
+                        else
+                            uart_cnt <= 0;
+                            rx_buffer(uart_state - 1) <= RX; 
+                            uart_state <= uart_state + 1;
+                        end if;
+                    when 9 => 
+                        if uart_cnt < BIT_TIME then uart_cnt <= uart_cnt + 1;
+                        else
+                            uart_cnt <= 0;
+                            uart_state <= 0; 
+                            
+                            -- Decodificación
+                            case rx_buffer is
+                                when x"77" => pc_up <= '1';     -- 'w'
+                                when x"73" => pc_dn <= '1';     -- 's'
+                                when x"64" => pc_right <= '1';  -- 'd'
+                                when x"65" => pc_center <= '1'; -- 'e'
+                                when x"72" => pc_rst <= '1';    -- 'r'
+                                
+                                when x"6D" => virt_mode <= not virt_mode; -- 'm'
+                                when x"74" => virt_sel  <= not virt_sel;  -- 't'
+                                when others => null;
+                            end case;
+                        end if;
+                    when others => uart_state <= 0;
+                end case;
+            end if;
+        end if;
+    end process;
+
+    -- Mezcla de señales
+    final_up     <= up_p or pc_up;
+    final_dn     <= dn_p or pc_dn;
+    final_right  <= r_p  or pc_right;
+    final_center <= c_p  or pc_center;
+    final_rst    <= RST or pc_rst;
+    final_mode   <= MODE xor virt_mode;
+    final_sel    <= SEL_SERVO xor virt_sel;
+
+    -- ANTIRREBOTE (Sin cambios)
+    process(CLK)
+        variable lu, ld, lr, lc : std_logic := '0';
+    begin
+        if rising_edge(CLK) then
+            if UP='1' then if cu<DEB_MAX then cu<=cu+1; else udb<='1'; end if; else cu<=0; udb<='0'; end if;
+            if DN='1' then if cd<DEB_MAX then cd<=cd+1; else ddb<='1'; end if; else cd<=0; ddb<='0'; end if;
+            if RIGHT='1' then if cr<DEB_MAX then cr<=cr+1; else rdb<='1'; end if; else cr<=0; rdb<='0'; end if;
+            if CENTER='1' then if cc<DEB_MAX then cc<=cc+1; else cdb<='1'; end if; else cc<=0; cdb<='0'; end if;
+
+            up_p <= udb and not lu; dn_p <= ddb and not ld;
+            r_p  <= rdb and not lr; c_p  <= cdb and not lc;
+            lu:=udb; ld:=ddb; lr:=rdb; lc:=cdb;
+        end if;
+    end process;
+
+    -- PWM (Sin cambios)
+    process(CLK)
+    begin
+        if rising_edge(CLK) then
+            if pwm_cnt<PWM_PERIOD then pwm_cnt<=pwm_cnt+1; else pwm_cnt<=0; end if;
+            if pwm_cnt < pw1 then PWM1_OUT <= '1'; else PWM1_OUT <= '0'; end if;
+            if pwm_cnt < pw2 then PWM2_OUT <= '1'; else PWM2_OUT <= '0'; end if;
+        end if;
+    end process;
+
+    -- CONTROL (CORREGIDO: ELIMINAMOS EL RESET DE virt_mode DE AQUÍ)
+    process(CLK)
+    begin
+        if rising_edge(CLK) then
+            if final_rst='1' then
+                mem1 <= (others=>0);
+                mem2 <= (others=>0);
+                reg_sel <= 0;
+                digit_sel <= '0';
+                exec_cnt <= 0;
+                -- CAMBIO 2: ¡AQUÍ BORRAMOS virt_mode <= '0' y virt_sel <= '0'!
+                -- Ya no causan conflicto porque las controla el proceso de arriba.
+            else
+                if final_mode='1' then -- MODO ESCRITURA
+                    if final_center='1' then
+                        if reg_sel=4 then reg_sel<=0; else reg_sel<=reg_sel+1; end if;
+                    end if;
+
+                    if final_right='1' then digit_sel <= not digit_sel; end if;
+
+                    if final_sel='1' then -- SERVO 1
+                        if final_up='1' then
+                            if digit_sel='0' and mem1(reg_sel)<=89 then mem1(reg_sel) <= mem1(reg_sel) + 10;
+                            elsif digit_sel='1' and get_units(mem1(reg_sel))<9 then mem1(reg_sel) <= mem1(reg_sel) + 1; end if;
+                        elsif final_dn='1' then
+                            if digit_sel='0' and mem1(reg_sel)>=10 then mem1(reg_sel) <= mem1(reg_sel) - 10;
+                            elsif digit_sel='1' and get_units(mem1(reg_sel))>0 then mem1(reg_sel) <= mem1(reg_sel) - 1; end if;
+                        end if;
+                    else -- SERVO 2
+                        if final_up='1' then
+                            if digit_sel='0' and mem2(reg_sel)<=89 then mem2(reg_sel) <= mem2(reg_sel) + 10;
+                            elsif digit_sel='1' and get_units(mem2(reg_sel))<9 then mem2(reg_sel) <= mem2(reg_sel) + 1; end if;
+                        elsif final_dn='1' then
+                            if digit_sel='0' and mem2(reg_sel)>=10 then mem2(reg_sel) <= mem2(reg_sel) - 10;
+                            elsif digit_sel='1' and get_units(mem2(reg_sel))>0 then mem2(reg_sel) <= mem2(reg_sel) - 1; end if;
+                        end if;
+                    end if;
+                else 
+                    -- MODO EJECUCION
+                    if exec_cnt < WAIT_1S then exec_cnt <= exec_cnt + 1;
+                    else
+                        exec_cnt <= 0;
+                        if reg_sel=4 then reg_sel<=0; else reg_sel<=reg_sel+1; end if;
+                    end if;
+                end if;
+            end if;
+
+            pw1 <= 50_000 + mem1(reg_sel)*278;
+            pw2 <= 50_000 + mem2(reg_sel)*278;
+        end if;
+    end process;
+
+    -- MULTIPLEX (Sin cambios)
+    process(CLK)
+    begin
+        if rising_edge(CLK) then
+            refresh<=refresh+1;
+            if refresh=x"FFFF" then digit<=digit+1; end if;
+        end if;
+    end process;
+
+    process(digit, reg_sel, mem1, mem2)
+    begin
+        case digit is
+            when "000" => ANO<="11111110"; SEG<=bin7(10);
+            when "001" => ANO<="11111101"; SEG<=bin7(reg_sel+1);
+            when "010" => ANO<="11111011"; SEG<=bin7(get_tens(mem1(reg_sel)));
+            when "011" => ANO<="11110111"; SEG<=bin7(get_units(mem1(reg_sel)));
+            when "100" => ANO<="11101111"; SEG<=bin7(11);
+            when "101" => ANO<="11011111"; SEG<=bin7(reg_sel+1);
+            when "110" => ANO<="10111111"; SEG<=bin7(get_tens(mem2(reg_sel)));
+            when "111" => ANO<="01111111"; SEG<=bin7(get_units(mem2(reg_sel)));
+            when others => ANO<="11111111"; SEG<="11111111";
+        end case;
+    end process;
+
+end Behavioral;
